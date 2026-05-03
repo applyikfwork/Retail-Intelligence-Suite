@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "OmniStore AI"
+version = "1.0.0"
+id = "artifacts/omnistore-ai"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25063
+
+[services.development]
+run = "pnpm --filter @workspace/omnistore-ai run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/omnistore-ai", "run", "build" ]
+publicDir = "artifacts/omnistore-ai/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25063"
+BASE_PATH = "/"

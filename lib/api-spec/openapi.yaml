@@ -3,20 +3,33 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: OmniStore AI API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: dashboard
+    description: Dashboard summary and analytics
+  - name: customers
+    description: Customer management
+  - name: sales
+    description: Sales and POS data
+  - name: campaigns
+    description: WhatsApp campaign management
+  - name: loyalty
+    description: Loyalty QR engine
+  - name: posts
+    description: Social media auto-poster
+  - name: footfall
+    description: Footfall heatmap data
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +37,320 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get overall business summary metrics
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/sales-by-hour:
+    get:
+      operationId: getSalesByHour
+      tags: [dashboard]
+      summary: Get sales broken down by hour of day for dead-zone analysis
+      responses:
+        "200":
+          description: Hourly sales data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HourlySales"
+
+  /dashboard/sales-by-day:
+    get:
+      operationId: getSalesByDay
+      tags: [dashboard]
+      summary: Get sales by day of week
+      responses:
+        "200":
+          description: Daily sales data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DailySales"
+
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Get recent transactions and events
+      responses:
+        "200":
+          description: Recent activity feed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /customers:
+    get:
+      operationId: listCustomers
+      tags: [customers]
+      summary: List all customers
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: tier
+          in: query
+          schema:
+            type: string
+            enum: [all, vip, regular, new]
+      responses:
+        "200":
+          description: List of customers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Customer"
+    post:
+      operationId: createCustomer
+      tags: [customers]
+      summary: Create a new customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCustomerBody"
+      responses:
+        "201":
+          description: Customer created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+
+  /customers/{id}:
+    get:
+      operationId: getCustomer
+      tags: [customers]
+      summary: Get a customer by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Customer details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+
+  /customers/top-loyal:
+    get:
+      operationId: getTopLoyalCustomers
+      tags: [customers]
+      summary: Get top loyal customers (top 20%) for campaigns
+      responses:
+        "200":
+          description: Top loyal customers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Customer"
+
+  /sales:
+    get:
+      operationId: listSales
+      tags: [sales]
+      summary: List sales transactions
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Sales list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Sale"
+    post:
+      operationId: createSale
+      tags: [sales]
+      summary: Record a new sale
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSaleBody"
+      responses:
+        "201":
+          description: Sale created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sale"
+
+  /campaigns:
+    get:
+      operationId: listCampaigns
+      tags: [campaigns]
+      summary: List WhatsApp campaigns
+      responses:
+        "200":
+          description: List of campaigns
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Campaign"
+    post:
+      operationId: createCampaign
+      tags: [campaigns]
+      summary: Create and trigger a WhatsApp campaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCampaignBody"
+      responses:
+        "201":
+          description: Campaign created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+
+  /campaigns/dead-zones:
+    get:
+      operationId: getDeadZones
+      tags: [campaigns]
+      summary: Get automatically detected dead zones (low-traffic periods)
+      responses:
+        "200":
+          description: Dead zone time slots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeadZone"
+
+  /loyalty/scan:
+    post:
+      operationId: recordLoyaltyScan
+      tags: [loyalty]
+      summary: Record a QR code scan for loyalty tracking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoyaltyScanBody"
+      responses:
+        "200":
+          description: Scan result with loyalty status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoyaltyScanResult"
+
+  /loyalty/cards:
+    get:
+      operationId: listLoyaltyCards
+      tags: [loyalty]
+      summary: List all loyalty cards
+      responses:
+        "200":
+          description: Loyalty cards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LoyaltyCard"
+
+  /posts:
+    get:
+      operationId: listPosts
+      tags: [posts]
+      summary: List social media posts
+      responses:
+        "200":
+          description: Posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SocialPost"
+    post:
+      operationId: createPost
+      tags: [posts]
+      summary: Create and schedule a social media post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePostBody"
+      responses:
+        "201":
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SocialPost"
+
+  /footfall/heatmap:
+    get:
+      operationId: getFootfallHeatmap
+      tags: [footfall]
+      summary: Get footfall heatmap zone data
+      responses:
+        "200":
+          description: Heatmap data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FootfallHeatmap"
+
+  /footfall/insights:
+    get:
+      operationId: getFootfallInsights
+      tags: [footfall]
+      summary: Get AI-generated footfall insights and alerts
+      responses:
+        "200":
+          description: Footfall insights
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FootfallInsight"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +358,407 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    DashboardSummary:
+      type: object
+      properties:
+        todayRevenue:
+          type: number
+        todayCustomers:
+          type: integer
+        totalCustomers:
+          type: integer
+        activeCampaigns:
+          type: integer
+        loyaltyScansToday:
+          type: integer
+        revenueGrowthPercent:
+          type: number
+        topServiceToday:
+          type: string
+        deadZoneAlert:
+          type: string
+          nullable: true
+      required:
+        - todayRevenue
+        - todayCustomers
+        - totalCustomers
+        - activeCampaigns
+        - loyaltyScansToday
+        - revenueGrowthPercent
+        - topServiceToday
+
+    HourlySales:
+      type: object
+      properties:
+        hour:
+          type: integer
+          description: Hour of day 0-23
+        label:
+          type: string
+          description: Display label e.g. "9 AM"
+        revenue:
+          type: number
+        customers:
+          type: integer
+        isDeadZone:
+          type: boolean
+      required: [hour, label, revenue, customers, isDeadZone]
+
+    DailySales:
+      type: object
+      properties:
+        day:
+          type: string
+        revenue:
+          type: number
+        customers:
+          type: integer
+      required: [day, revenue, customers]
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [sale, scan, campaign, post, call]
+        description:
+          type: string
+        customerName:
+          type: string
+          nullable: true
+        amount:
+          type: number
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, type, description, createdAt]
+
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          nullable: true
+        tier:
+          type: string
+          enum: [vip, regular, new]
+        totalSpend:
+          type: number
+        visitCount:
+          type: integer
+        lastVisit:
+          type: string
+          format: date-time
+          nullable: true
+        loyaltyScanCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - phone
+        - tier
+        - totalSpend
+        - visitCount
+        - loyaltyScanCount
+        - createdAt
+
+    CreateCustomerBody:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          nullable: true
+      required: [name, phone]
+
+    Sale:
+      type: object
+      properties:
+        id:
+          type: integer
+        customerId:
+          type: integer
+          nullable: true
+        customerName:
+          type: string
+          nullable: true
+        service:
+          type: string
+        amount:
+          type: number
+        paymentMethod:
+          type: string
+          enum: [cash, upi, card]
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, service, amount, paymentMethod, createdAt]
+
+    CreateSaleBody:
+      type: object
+      properties:
+        customerId:
+          type: integer
+          nullable: true
+        service:
+          type: string
+        amount:
+          type: number
+        paymentMethod:
+          type: string
+          enum: [cash, upi, card]
+      required: [service, amount, paymentMethod]
+
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        message:
+          type: string
+        discountPercent:
+          type: integer
+          nullable: true
+        targetTier:
+          type: string
+          enum: [all, vip, regular]
+        sentCount:
+          type: integer
+        responseCount:
+          type: integer
+        status:
+          type: string
+          enum: [draft, sent, scheduled]
+        scheduledFor:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - message
+        - targetTier
+        - sentCount
+        - responseCount
+        - status
+        - createdAt
+
+    CreateCampaignBody:
+      type: object
+      properties:
+        title:
+          type: string
+        message:
+          type: string
+        discountPercent:
+          type: integer
+          nullable: true
+        targetTier:
+          type: string
+          enum: [all, vip, regular]
+        scheduledFor:
+          type: string
+          format: date-time
+          nullable: true
+      required: [title, message, targetTier]
+
+    DeadZone:
+      type: object
+      properties:
+        dayOfWeek:
+          type: string
+        startHour:
+          type: integer
+        endHour:
+          type: integer
+        avgRevenue:
+          type: number
+        label:
+          type: string
+        suggestedDiscount:
+          type: integer
+      required: [dayOfWeek, startHour, endHour, avgRevenue, label, suggestedDiscount]
+
+    LoyaltyCard:
+      type: object
+      properties:
+        id:
+          type: integer
+        customerId:
+          type: integer
+        customerName:
+          type: string
+        phone:
+          type: string
+        scanCount:
+          type: integer
+        freeSessionEarned:
+          type: boolean
+        freeSessionRedeemed:
+          type: boolean
+        qrCode:
+          type: string
+        lastScan:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - customerId
+        - customerName
+        - phone
+        - scanCount
+        - freeSessionEarned
+        - freeSessionRedeemed
+        - qrCode
+
+    LoyaltyScanBody:
+      type: object
+      properties:
+        qrCode:
+          type: string
+        phone:
+          type: string
+      required: [qrCode, phone]
+
+    LoyaltyScanResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        scanCount:
+          type: integer
+        message:
+          type: string
+        freeSessionEarned:
+          type: boolean
+        nextFreeAt:
+          type: integer
+      required: [success, scanCount, message, freeSessionEarned, nextFreeAt]
+
+    SocialPost:
+      type: object
+      properties:
+        id:
+          type: integer
+        caption:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+        platforms:
+          type: array
+          items:
+            type: string
+            enum: [google_business, instagram]
+        status:
+          type: string
+          enum: [draft, published, scheduled]
+        likes:
+          type: integer
+        reach:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, caption, platforms, status, likes, reach, createdAt]
+
+    CreatePostBody:
+      type: object
+      properties:
+        caption:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+        platforms:
+          type: array
+          items:
+            type: string
+            enum: [google_business, instagram]
+        localKeywords:
+          type: array
+          items:
+            type: string
+      required: [caption, platforms]
+
+    FootfallHeatmap:
+      type: object
+      properties:
+        zones:
+          type: array
+          items:
+            $ref: "#/components/schemas/HeatmapZone"
+        lastUpdated:
+          type: string
+          format: date-time
+      required: [zones, lastUpdated]
+
+    HeatmapZone:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        x:
+          type: number
+          description: X position percentage 0-100
+        "y":
+          type: number
+          description: Y position percentage 0-100
+        width:
+          type: number
+        height:
+          type: number
+        intensity:
+          type: number
+          description: 0.0 to 1.0 — heat intensity
+        visitors:
+          type: integer
+        conversionRate:
+          type: number
+          description: Percentage of visitors who purchased
+        alert:
+          type: string
+          nullable: true
+      required: [id, label, x, "y", width, height, intensity, visitors, conversionRate]
+
+    FootfallInsight:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [opportunity, warning, success]
+        zone:
+          type: string
+        message:
+          type: string
+        actionSuggested:
+          type: string
+          nullable: true
+      required: [id, type, zone, message]
