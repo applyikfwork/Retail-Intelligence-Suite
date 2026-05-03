@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * OmniStore AI API specification
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 export interface HealthStatus {
   status: string;
@@ -18,12 +18,13 @@ export interface DashboardSummary {
   revenueGrowthPercent: number;
   topServiceToday: string;
   deadZoneAlert?: string | null;
+  todayAppointments: number;
+  lowStockAlerts: number;
+  netProfitToday: number;
 }
 
 export interface HourlySales {
-  /** Hour of day 0-23 */
   hour: number;
-  /** Display label e.g. "9 AM" */
   label: string;
   revenue: number;
   customers: number;
@@ -45,6 +46,7 @@ export const ActivityItemType = {
   campaign: "campaign",
   post: "post",
   call: "call",
+  appointment: "appointment",
 } as const;
 
 export interface ActivityItem {
@@ -77,6 +79,17 @@ export interface Customer {
   createdAt: string;
 }
 
+export interface WinBackCustomer {
+  id: number;
+  name: string;
+  phone: string;
+  tier: string;
+  totalSpend: number;
+  daysSinceVisit: number;
+  suggestedOffer: string;
+  ltv: number;
+}
+
 export interface CreateCustomerBody {
   name: string;
   phone: string;
@@ -99,6 +112,7 @@ export interface Sale {
   service: string;
   amount: number;
   paymentMethod: SalePaymentMethod;
+  staffId?: number | null;
   createdAt: string;
 }
 
@@ -116,6 +130,7 @@ export interface CreateSaleBody {
   service: string;
   amount: number;
   paymentMethod: CreateSaleBodyPaymentMethod;
+  staffId?: number | null;
 }
 
 export type CampaignTargetTier =
@@ -166,6 +181,17 @@ export interface CreateCampaignBody {
   scheduledFor?: string | null;
 }
 
+export interface CampaignSuggestionsBody {
+  deadZoneLabel: string;
+  discountPercent: number;
+  targetTier: string;
+  service: string;
+}
+
+export interface CampaignSuggestionsResult {
+  suggestions: string[];
+}
+
 export interface DeadZone {
   dayOfWeek: string;
   startHour: number;
@@ -200,14 +226,6 @@ export interface LoyaltyScanResult {
   nextFreeAt: number;
 }
 
-export type SocialPostPlatformsItem =
-  (typeof SocialPostPlatformsItem)[keyof typeof SocialPostPlatformsItem];
-
-export const SocialPostPlatformsItem = {
-  google_business: "google_business",
-  instagram: "instagram",
-} as const;
-
 export type SocialPostStatus =
   (typeof SocialPostStatus)[keyof typeof SocialPostStatus];
 
@@ -221,41 +239,29 @@ export interface SocialPost {
   id: number;
   caption: string;
   imageUrl?: string | null;
-  platforms: SocialPostPlatformsItem[];
+  platforms: string[];
   status: SocialPostStatus;
   likes: number;
   reach: number;
   createdAt: string;
 }
 
-export type CreatePostBodyPlatformsItem =
-  (typeof CreatePostBodyPlatformsItem)[keyof typeof CreatePostBodyPlatformsItem];
-
-export const CreatePostBodyPlatformsItem = {
-  google_business: "google_business",
-  instagram: "instagram",
-} as const;
-
 export interface CreatePostBody {
   caption: string;
   imageUrl?: string | null;
-  platforms: CreatePostBodyPlatformsItem[];
+  platforms: string[];
   localKeywords?: string[];
 }
 
 export interface HeatmapZone {
   id: string;
   label: string;
-  /** X position percentage 0-100 */
   x: number;
-  /** Y position percentage 0-100 */
   y: number;
   width: number;
   height: number;
-  /** 0.0 to 1.0 — heat intensity */
   intensity: number;
   visitors: number;
-  /** Percentage of visitors who purchased */
   conversionRate: number;
   alert?: string | null;
 }
@@ -282,6 +288,317 @@ export interface FootfallInsight {
   actionSuggested?: string | null;
 }
 
+export type AppointmentStatus =
+  (typeof AppointmentStatus)[keyof typeof AppointmentStatus];
+
+export const AppointmentStatus = {
+  scheduled: "scheduled",
+  completed: "completed",
+  cancelled: "cancelled",
+  no_show: "no_show",
+} as const;
+
+export interface Appointment {
+  id: number;
+  customerId?: number | null;
+  customerName?: string | null;
+  customerPhone?: string | null;
+  staffId?: number | null;
+  staffName?: string | null;
+  service: string;
+  notes?: string | null;
+  status: AppointmentStatus;
+  scheduledAt: string;
+  durationMinutes: number;
+  createdAt: string;
+}
+
+export interface CreateAppointmentBody {
+  customerId?: number | null;
+  staffId?: number | null;
+  service: string;
+  notes?: string | null;
+  scheduledAt: string;
+  durationMinutes?: number;
+}
+
+export type UpdateAppointmentBodyStatus =
+  (typeof UpdateAppointmentBodyStatus)[keyof typeof UpdateAppointmentBodyStatus];
+
+export const UpdateAppointmentBodyStatus = {
+  scheduled: "scheduled",
+  completed: "completed",
+  cancelled: "cancelled",
+  no_show: "no_show",
+} as const;
+
+export interface UpdateAppointmentBody {
+  status?: UpdateAppointmentBodyStatus;
+  notes?: string | null;
+  scheduledAt?: string | null;
+}
+
+export interface StaffMember {
+  id: number;
+  name: string;
+  phone: string;
+  role: string;
+  salary: number;
+  commissionPercent: number;
+  isActive: boolean;
+  joinedAt: string;
+  createdAt: string;
+}
+
+export interface CreateStaffBody {
+  name: string;
+  phone: string;
+  role: string;
+  salary: number;
+  commissionPercent?: number;
+}
+
+export interface StaffPerformance {
+  staffId: number;
+  staffName: string;
+  totalSales: number;
+  totalRevenue: number;
+  commissionEarned: number;
+  avgSaleValue: number;
+  topService: string;
+  appointmentsCompleted: number;
+}
+
+export type ExpenseCategoryProperty =
+  (typeof ExpenseCategoryProperty)[keyof typeof ExpenseCategoryProperty];
+
+export const ExpenseCategoryProperty = {
+  rent: "rent",
+  salaries: "salaries",
+  supplies: "supplies",
+  utilities: "utilities",
+  marketing: "marketing",
+  equipment: "equipment",
+  other: "other",
+} as const;
+
+export interface Expense {
+  id: number;
+  title: string;
+  amount: number;
+  category: ExpenseCategoryProperty;
+  notes?: string | null;
+  date: string;
+  createdAt: string;
+}
+
+export type CreateExpenseBodyCategory =
+  (typeof CreateExpenseBodyCategory)[keyof typeof CreateExpenseBodyCategory];
+
+export const CreateExpenseBodyCategory = {
+  rent: "rent",
+  salaries: "salaries",
+  supplies: "supplies",
+  utilities: "utilities",
+  marketing: "marketing",
+  equipment: "equipment",
+  other: "other",
+} as const;
+
+export interface CreateExpenseBody {
+  title: string;
+  amount: number;
+  category: CreateExpenseBodyCategory;
+  notes?: string | null;
+  date?: string | null;
+}
+
+export interface ExpenseCategory {
+  category: string;
+  amount: number;
+  percentage: number;
+}
+
+export interface MonthlyPnL {
+  month: string;
+  revenue: number;
+  expenses: number;
+  profit: number;
+}
+
+export interface ProfitSummary {
+  totalRevenue: number;
+  totalExpenses: number;
+  grossProfit: number;
+  netProfitMargin: number;
+  expenseBreakdown: ExpenseCategory[];
+  monthlyTrend: MonthlyPnL[];
+}
+
+export interface InventoryItem {
+  id: number;
+  name: string;
+  category: string;
+  price: number;
+  costPrice: number;
+  stock: number;
+  lowStockThreshold: number;
+  isService: boolean;
+  isActive: boolean;
+  description?: string | null;
+  isLowStock: boolean;
+  margin: number;
+  createdAt: string;
+}
+
+export interface CreateInventoryBody {
+  name: string;
+  category: string;
+  price: number;
+  costPrice: number;
+  stock?: number;
+  lowStockThreshold?: number;
+  isService?: boolean;
+  description?: string | null;
+}
+
+export interface UpdateInventoryBody {
+  price?: number | null;
+  stock?: number | null;
+  isActive?: boolean | null;
+}
+
+export interface Review {
+  id: number;
+  platform: string;
+  reviewerName: string;
+  rating: number;
+  body: string;
+  reply?: string | null;
+  isReplied: boolean;
+  publishedAt: string;
+  createdAt: string;
+}
+
+export interface ReviewReplyBody {
+  reply: string;
+}
+
+export interface Referral {
+  id: number;
+  referrerId: number;
+  referrerName: string;
+  referredName: string;
+  referredPhone: string;
+  referralCode: string;
+  isConverted: boolean;
+  rewardGiven: boolean;
+  convertedAt?: string | null;
+  createdAt: string;
+}
+
+export interface CreateReferralBody {
+  referrerId: number;
+  referredName: string;
+  referredPhone: string;
+}
+
+export type InvoiceStatus = (typeof InvoiceStatus)[keyof typeof InvoiceStatus];
+
+export const InvoiceStatus = {
+  paid: "paid",
+  pending: "pending",
+  cancelled: "cancelled",
+} as const;
+
+export interface InvoiceLineItem {
+  name: string;
+  quantity: number;
+  price: number;
+  total: number;
+}
+
+export interface Invoice {
+  id: number;
+  invoiceNumber: string;
+  customerId?: number | null;
+  customerName: string;
+  customerPhone: string;
+  items: InvoiceLineItem[];
+  subtotal: number;
+  discountAmount: number;
+  taxAmount: number;
+  total: number;
+  status: InvoiceStatus;
+  qrCode: string;
+  createdAt: string;
+}
+
+export interface CreateInvoiceBody {
+  customerId?: number | null;
+  customerName: string;
+  customerPhone: string;
+  items: InvoiceLineItem[];
+  discountAmount?: number;
+  taxRate?: number;
+}
+
+export type RevenueForecastTrend =
+  (typeof RevenueForecastTrend)[keyof typeof RevenueForecastTrend];
+
+export const RevenueForecastTrend = {
+  up: "up",
+  down: "down",
+  stable: "stable",
+} as const;
+
+export interface ForecastDay {
+  date: string;
+  dayName: string;
+  predictedRevenue: number;
+  lowerBound: number;
+  upperBound: number;
+  isDeadZoneRisk: boolean;
+  suggestedAction?: string | null;
+}
+
+export interface RevenueForecast {
+  days: ForecastDay[];
+  weekTotal: number;
+  confidenceLevel: string;
+  trend: RevenueForecastTrend;
+  insight: string;
+}
+
+export interface Conversation {
+  id: number;
+  title: string;
+  createdAt: string;
+}
+
+export interface CreateConversationBody {
+  title: string;
+}
+
+export type MessageRole = (typeof MessageRole)[keyof typeof MessageRole];
+
+export const MessageRole = {
+  user: "user",
+  assistant: "assistant",
+} as const;
+
+export interface Message {
+  id: number;
+  conversationId: number;
+  role: MessageRole;
+  content: string;
+  createdAt: string;
+}
+
+export interface SendMessageBody {
+  content: string;
+}
+
 export type ListCustomersParams = {
   search?: string;
   tier?: ListCustomersTier;
@@ -299,4 +616,11 @@ export const ListCustomersTier = {
 
 export type ListSalesParams = {
   limit?: number;
+};
+
+export type ListAppointmentsParams = {
+  /**
+   * ISO date string for filtering
+   */
+  date?: string;
 };

@@ -11,6 +11,17 @@ import Sales from "@/pages/sales";
 import Loyalty from "@/pages/loyalty";
 import Footfall from "@/pages/footfall";
 import Social from "@/pages/social";
+import Appointments from "@/pages/appointments";
+import Invoices from "@/pages/invoices";
+import WinBack from "@/pages/win-back";
+import Chat from "@/pages/chat";
+import Forecast from "@/pages/forecast";
+import Staff from "@/pages/staff";
+import Expenses from "@/pages/expenses";
+import Inventory from "@/pages/inventory";
+import Reviews from "@/pages/reviews";
+import Referrals from "@/pages/referrals";
+import TryOn from "@/pages/tryon";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -26,6 +37,17 @@ function Router() {
         <Route path="/loyalty" component={Loyalty} />
         <Route path="/footfall" component={Footfall} />
         <Route path="/social" component={Social} />
+        <Route path="/appointments" component={Appointments} />
+        <Route path="/invoices" component={Invoices} />
+        <Route path="/win-back" component={WinBack} />
+        <Route path="/chat" component={Chat} />
+        <Route path="/forecast" component={Forecast} />
+        <Route path="/staff" component={Staff} />
+        <Route path="/expenses" component={Expenses} />
+        <Route path="/inventory" component={Inventory} />
+        <Route path="/reviews" component={Reviews} />
+        <Route path="/referrals" component={Referrals} />
+        <Route path="/tryon" component={TryOn} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

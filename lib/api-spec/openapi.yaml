@@ -2,28 +2,29 @@ openapi: 3.1.0
 info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.1.0
+  version: 0.2.0
   description: OmniStore AI API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
   - name: dashboard
-    description: Dashboard summary and analytics
   - name: customers
-    description: Customer management
   - name: sales
-    description: Sales and POS data
   - name: campaigns
-    description: WhatsApp campaign management
   - name: loyalty
-    description: Loyalty QR engine
   - name: posts
-    description: Social media auto-poster
   - name: footfall
-    description: Footfall heatmap data
+  - name: appointments
+  - name: staff
+  - name: expenses
+  - name: inventory
+  - name: reviews
+  - name: referrals
+  - name: invoices
+  - name: forecast
+  - name: openai
 paths:
   /healthz:
     get:
@@ -42,7 +43,6 @@ paths:
     get:
       operationId: getDashboardSummary
       tags: [dashboard]
-      summary: Get overall business summary metrics
       responses:
         "200":
           description: Dashboard summary
@@ -55,10 +55,9 @@ paths:
     get:
       operationId: getSalesByHour
       tags: [dashboard]
-      summary: Get sales broken down by hour of day for dead-zone analysis
       responses:
         "200":
-          description: Hourly sales data
+          description: Hourly sales
           content:
             application/json:
               schema:
@@ -70,10 +69,9 @@ paths:
     get:
       operationId: getSalesByDay
       tags: [dashboard]
-      summary: Get sales by day of week
       responses:
         "200":
-          description: Daily sales data
+          description: Daily sales
           content:
             application/json:
               schema:
@@ -85,10 +83,9 @@ paths:
     get:
       operationId: getRecentActivity
       tags: [dashboard]
-      summary: Get recent transactions and events
       responses:
         "200":
-          description: Recent activity feed
+          description: Recent activity
           content:
             application/json:
               schema:
@@ -100,7 +97,6 @@ paths:
     get:
       operationId: listCustomers
       tags: [customers]
-      summary: List all customers
       parameters:
         - name: search
           in: query
@@ -113,7 +109,7 @@ paths:
             enum: [all, vip, regular, new]
       responses:
         "200":
-          description: List of customers
+          description: Customers
           content:
             application/json:
               schema:
@@ -123,7 +119,6 @@ paths:
     post:
       operationId: createCustomer
       tags: [customers]
-      summary: Create a new customer
       requestBody:
         required: true
         content:
@@ -132,26 +127,7 @@ paths:
               $ref: "#/components/schemas/CreateCustomerBody"
       responses:
         "201":
-          description: Customer created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Customer"
-
-  /customers/{id}:
-    get:
-      operationId: getCustomer
-      tags: [customers]
-      summary: Get a customer by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Customer details
+          description: Created
           content:
             application/json:
               schema:
@@ -161,7 +137,6 @@ paths:
     get:
       operationId: getTopLoyalCustomers
       tags: [customers]
-      summary: Get top loyal customers (top 20%) for campaigns
       responses:
         "200":
           description: Top loyal customers
@@ -172,11 +147,43 @@ paths:
                 items:
                   $ref: "#/components/schemas/Customer"
 
+  /customers/win-back:
+    get:
+      operationId: getWinBackCustomers
+      tags: [customers]
+      summary: Customers at risk (no visit in 30+ days)
+      responses:
+        "200":
+          description: At-risk customers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WinBackCustomer"
+
+  /customers/{id}:
+    get:
+      operationId: getCustomer
+      tags: [customers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Customer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+
   /sales:
     get:
       operationId: listSales
       tags: [sales]
-      summary: List sales transactions
       parameters:
         - name: limit
           in: query
@@ -185,7 +192,7 @@ paths:
             default: 50
       responses:
         "200":
-          description: Sales list
+          description: Sales
           content:
             application/json:
               schema:
@@ -195,7 +202,6 @@ paths:
     post:
       operationId: createSale
       tags: [sales]
-      summary: Record a new sale
       requestBody:
         required: true
         content:
@@ -204,7 +210,7 @@ paths:
               $ref: "#/components/schemas/CreateSaleBody"
       responses:
         "201":
-          description: Sale created
+          description: Created
           content:
             application/json:
               schema:
@@ -214,10 +220,9 @@ paths:
     get:
       operationId: listCampaigns
       tags: [campaigns]
-      summary: List WhatsApp campaigns
       responses:
         "200":
-          description: List of campaigns
+          description: Campaigns
           content:
             application/json:
               schema:
@@ -227,7 +232,6 @@ paths:
     post:
       operationId: createCampaign
       tags: [campaigns]
-      summary: Create and trigger a WhatsApp campaign
       requestBody:
         required: true
         content:
@@ -236,7 +240,7 @@ paths:
               $ref: "#/components/schemas/CreateCampaignBody"
       responses:
         "201":
-          description: Campaign created
+          description: Created
           content:
             application/json:
               schema:
@@ -246,10 +250,9 @@ paths:
     get:
       operationId: getDeadZones
       tags: [campaigns]
-      summary: Get automatically detected dead zones (low-traffic periods)
       responses:
         "200":
-          description: Dead zone time slots
+          description: Dead zones
           content:
             application/json:
               schema:
@@ -257,11 +260,29 @@ paths:
                 items:
                   $ref: "#/components/schemas/DeadZone"
 
+  /campaigns/suggestions:
+    post:
+      operationId: getCampaignSuggestions
+      tags: [campaigns]
+      summary: AI-generated Hinglish campaign message suggestions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignSuggestionsBody"
+      responses:
+        "200":
+          description: Suggestions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignSuggestionsResult"
+
   /loyalty/scan:
     post:
       operationId: recordLoyaltyScan
       tags: [loyalty]
-      summary: Record a QR code scan for loyalty tracking
       requestBody:
         required: true
         content:
@@ -270,7 +291,7 @@ paths:
               $ref: "#/components/schemas/LoyaltyScanBody"
       responses:
         "200":
-          description: Scan result with loyalty status
+          description: Scan result
           content:
             application/json:
               schema:
@@ -280,7 +301,6 @@ paths:
     get:
       operationId: listLoyaltyCards
       tags: [loyalty]
-      summary: List all loyalty cards
       responses:
         "200":
           description: Loyalty cards
@@ -295,7 +315,6 @@ paths:
     get:
       operationId: listPosts
       tags: [posts]
-      summary: List social media posts
       responses:
         "200":
           description: Posts
@@ -308,7 +327,6 @@ paths:
     post:
       operationId: createPost
       tags: [posts]
-      summary: Create and schedule a social media post
       requestBody:
         required: true
         content:
@@ -317,7 +335,7 @@ paths:
               $ref: "#/components/schemas/CreatePostBody"
       responses:
         "201":
-          description: Post created
+          description: Created
           content:
             application/json:
               schema:
@@ -327,10 +345,9 @@ paths:
     get:
       operationId: getFootfallHeatmap
       tags: [footfall]
-      summary: Get footfall heatmap zone data
       responses:
         "200":
-          description: Heatmap data
+          description: Heatmap
           content:
             application/json:
               schema:
@@ -340,16 +357,431 @@ paths:
     get:
       operationId: getFootfallInsights
       tags: [footfall]
-      summary: Get AI-generated footfall insights and alerts
       responses:
         "200":
-          description: Footfall insights
+          description: Insights
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/FootfallInsight"
+
+  /appointments:
+    get:
+      operationId: listAppointments
+      tags: [appointments]
+      parameters:
+        - name: date
+          in: query
+          schema:
+            type: string
+            description: ISO date string for filtering
+      responses:
+        "200":
+          description: Appointments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Appointment"
+    post:
+      operationId: createAppointment
+      tags: [appointments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAppointmentBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+
+  /appointments/{id}:
+    patch:
+      operationId: updateAppointment
+      tags: [appointments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAppointmentBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+    delete:
+      operationId: deleteAppointment
+      tags: [appointments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /staff:
+    get:
+      operationId: listStaff
+      tags: [staff]
+      responses:
+        "200":
+          description: Staff
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StaffMember"
+    post:
+      operationId: createStaff
+      tags: [staff]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStaffBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+
+  /staff/{id}/performance:
+    get:
+      operationId: getStaffPerformance
+      tags: [staff]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Performance data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffPerformance"
+
+  /expenses:
+    get:
+      operationId: listExpenses
+      tags: [expenses]
+      responses:
+        "200":
+          description: Expenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Expense"
+    post:
+      operationId: createExpense
+      tags: [expenses]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExpenseBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+
+  /expenses/profit-summary:
+    get:
+      operationId: getProfitSummary
+      tags: [expenses]
+      responses:
+        "200":
+          description: Profit summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfitSummary"
+
+  /inventory:
+    get:
+      operationId: listInventory
+      tags: [inventory]
+      responses:
+        "200":
+          description: Inventory
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryItem"
+    post:
+      operationId: createInventoryItem
+      tags: [inventory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInventoryBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+
+  /inventory/{id}:
+    patch:
+      operationId: updateInventoryItem
+      tags: [inventory]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInventoryBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+
+  /reviews:
+    get:
+      operationId: listReviews
+      tags: [reviews]
+      responses:
+        "200":
+          description: Reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Review"
+
+  /reviews/{id}/reply:
+    post:
+      operationId: replyToReview
+      tags: [reviews]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewReplyBody"
+      responses:
+        "200":
+          description: Reply posted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+
+  /referrals:
+    get:
+      operationId: listReferrals
+      tags: [referrals]
+      responses:
+        "200":
+          description: Referrals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Referral"
+    post:
+      operationId: createReferral
+      tags: [referrals]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReferralBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Referral"
+
+  /referrals/{code}/convert:
+    post:
+      operationId: convertReferral
+      tags: [referrals]
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Converted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Referral"
+
+  /invoices:
+    get:
+      operationId: listInvoices
+      tags: [invoices]
+      responses:
+        "200":
+          description: Invoices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Invoice"
+    post:
+      operationId: createInvoice
+      tags: [invoices]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInvoiceBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  /forecast/revenue:
+    get:
+      operationId: getRevenueForecast
+      tags: [forecast]
+      responses:
+        "200":
+          description: 7-day revenue forecast
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RevenueForecast"
+
+  /openai/conversations:
+    get:
+      operationId: listConversations
+      tags: [openai]
+      responses:
+        "200":
+          description: Conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Conversation"
+    post:
+      operationId: createConversation
+      tags: [openai]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateConversationBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+
+  /openai/conversations/{id}/messages:
+    get:
+      operationId: listMessages
+      tags: [openai]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+    post:
+      operationId: sendMessage
+      tags: [openai]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendMessageBody"
+      responses:
+        "200":
+          description: Streaming SSE response
+          content:
+            text/event-stream:
+              schema:
+                type: string
 
 components:
   schemas:
@@ -380,6 +812,12 @@ components:
         deadZoneAlert:
           type: string
           nullable: true
+        todayAppointments:
+          type: integer
+        lowStockAlerts:
+          type: integer
+        netProfitToday:
+          type: number
       required:
         - todayRevenue
         - todayCustomers
@@ -388,16 +826,17 @@ components:
         - loyaltyScansToday
         - revenueGrowthPercent
         - topServiceToday
+        - todayAppointments
+        - lowStockAlerts
+        - netProfitToday
 
     HourlySales:
       type: object
       properties:
         hour:
           type: integer
-          description: Hour of day 0-23
         label:
           type: string
-          description: Display label e.g. "9 AM"
         revenue:
           type: number
         customers:
@@ -424,7 +863,7 @@ components:
           type: integer
         type:
           type: string
-          enum: [sale, scan, campaign, post, call]
+          enum: [sale, scan, campaign, post, call, appointment]
         description:
           type: string
         customerName:
@@ -476,6 +915,27 @@ components:
         - loyaltyScanCount
         - createdAt
 
+    WinBackCustomer:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+        tier:
+          type: string
+        totalSpend:
+          type: number
+        daysSinceVisit:
+          type: integer
+        suggestedOffer:
+          type: string
+        ltv:
+          type: number
+      required: [id, name, phone, tier, totalSpend, daysSinceVisit, suggestedOffer, ltv]
+
     CreateCustomerBody:
       type: object
       properties:
@@ -506,6 +966,9 @@ components:
         paymentMethod:
           type: string
           enum: [cash, upi, card]
+        staffId:
+          type: integer
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -524,6 +987,9 @@ components:
         paymentMethod:
           type: string
           enum: [cash, upi, card]
+        staffId:
+          type: integer
+          nullable: true
       required: [service, amount, paymentMethod]
 
     Campaign:
@@ -583,6 +1049,28 @@ components:
           format: date-time
           nullable: true
       required: [title, message, targetTier]
+
+    CampaignSuggestionsBody:
+      type: object
+      properties:
+        deadZoneLabel:
+          type: string
+        discountPercent:
+          type: integer
+        targetTier:
+          type: string
+        service:
+          type: string
+      required: [deadZoneLabel, discountPercent, targetTier, service]
+
+    CampaignSuggestionsResult:
+      type: object
+      properties:
+        suggestions:
+          type: array
+          items:
+            type: string
+      required: [suggestions]
 
     DeadZone:
       type: object
@@ -672,7 +1160,6 @@ components:
           type: array
           items:
             type: string
-            enum: [google_business, instagram]
         status:
           type: string
           enum: [draft, published, scheduled]
@@ -697,7 +1184,6 @@ components:
           type: array
           items:
             type: string
-            enum: [google_business, instagram]
         localKeywords:
           type: array
           items:
@@ -725,22 +1211,18 @@ components:
           type: string
         x:
           type: number
-          description: X position percentage 0-100
         "y":
           type: number
-          description: Y position percentage 0-100
         width:
           type: number
         height:
           type: number
         intensity:
           type: number
-          description: 0.0 to 1.0 — heat intensity
         visitors:
           type: integer
         conversionRate:
           type: number
-          description: Percentage of visitors who purchased
         alert:
           type: string
           nullable: true
@@ -762,3 +1244,567 @@ components:
           type: string
           nullable: true
       required: [id, type, zone, message]
+
+    Appointment:
+      type: object
+      properties:
+        id:
+          type: integer
+        customerId:
+          type: integer
+          nullable: true
+        customerName:
+          type: string
+          nullable: true
+        customerPhone:
+          type: string
+          nullable: true
+        staffId:
+          type: integer
+          nullable: true
+        staffName:
+          type: string
+          nullable: true
+        service:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [scheduled, completed, cancelled, no_show]
+        scheduledAt:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, service, status, scheduledAt, durationMinutes, createdAt]
+
+    CreateAppointmentBody:
+      type: object
+      properties:
+        customerId:
+          type: integer
+          nullable: true
+        staffId:
+          type: integer
+          nullable: true
+        service:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        scheduledAt:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+      required: [service, scheduledAt]
+
+    UpdateAppointmentBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [scheduled, completed, cancelled, no_show]
+        notes:
+          type: string
+          nullable: true
+        scheduledAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    StaffMember:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+        role:
+          type: string
+        salary:
+          type: number
+        commissionPercent:
+          type: number
+        isActive:
+          type: boolean
+        joinedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, phone, role, salary, commissionPercent, isActive, joinedAt, createdAt]
+
+    CreateStaffBody:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        role:
+          type: string
+        salary:
+          type: number
+        commissionPercent:
+          type: number
+      required: [name, phone, role, salary]
+
+    StaffPerformance:
+      type: object
+      properties:
+        staffId:
+          type: integer
+        staffName:
+          type: string
+        totalSales:
+          type: integer
+        totalRevenue:
+          type: number
+        commissionEarned:
+          type: number
+        avgSaleValue:
+          type: number
+        topService:
+          type: string
+        appointmentsCompleted:
+          type: integer
+      required:
+        - staffId
+        - staffName
+        - totalSales
+        - totalRevenue
+        - commissionEarned
+        - avgSaleValue
+        - topService
+        - appointmentsCompleted
+
+    Expense:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        amount:
+          type: number
+        category:
+          type: string
+          enum: [rent, salaries, supplies, utilities, marketing, equipment, other]
+        notes:
+          type: string
+          nullable: true
+        date:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, title, amount, category, date, createdAt]
+
+    CreateExpenseBody:
+      type: object
+      properties:
+        title:
+          type: string
+        amount:
+          type: number
+        category:
+          type: string
+          enum: [rent, salaries, supplies, utilities, marketing, equipment, other]
+        notes:
+          type: string
+          nullable: true
+        date:
+          type: string
+          format: date-time
+          nullable: true
+      required: [title, amount, category]
+
+    ProfitSummary:
+      type: object
+      properties:
+        totalRevenue:
+          type: number
+        totalExpenses:
+          type: number
+        grossProfit:
+          type: number
+        netProfitMargin:
+          type: number
+        expenseBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExpenseCategory"
+        monthlyTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/MonthlyPnL"
+      required:
+        - totalRevenue
+        - totalExpenses
+        - grossProfit
+        - netProfitMargin
+        - expenseBreakdown
+        - monthlyTrend
+
+    ExpenseCategory:
+      type: object
+      properties:
+        category:
+          type: string
+        amount:
+          type: number
+        percentage:
+          type: number
+      required: [category, amount, percentage]
+
+    MonthlyPnL:
+      type: object
+      properties:
+        month:
+          type: string
+        revenue:
+          type: number
+        expenses:
+          type: number
+        profit:
+          type: number
+      required: [month, revenue, expenses, profit]
+
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+        costPrice:
+          type: number
+        stock:
+          type: integer
+        lowStockThreshold:
+          type: integer
+        isService:
+          type: boolean
+        isActive:
+          type: boolean
+        description:
+          type: string
+          nullable: true
+        isLowStock:
+          type: boolean
+        margin:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - category
+        - price
+        - costPrice
+        - stock
+        - lowStockThreshold
+        - isService
+        - isActive
+        - isLowStock
+        - margin
+        - createdAt
+
+    CreateInventoryBody:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+        costPrice:
+          type: number
+        stock:
+          type: integer
+        lowStockThreshold:
+          type: integer
+        isService:
+          type: boolean
+        description:
+          type: string
+          nullable: true
+      required: [name, category, price, costPrice]
+
+    UpdateInventoryBody:
+      type: object
+      properties:
+        price:
+          type: number
+          nullable: true
+        stock:
+          type: integer
+          nullable: true
+        isActive:
+          type: boolean
+          nullable: true
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+        platform:
+          type: string
+        reviewerName:
+          type: string
+        rating:
+          type: integer
+        body:
+          type: string
+        reply:
+          type: string
+          nullable: true
+        isReplied:
+          type: boolean
+        publishedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, platform, reviewerName, rating, body, isReplied, publishedAt, createdAt]
+
+    ReviewReplyBody:
+      type: object
+      properties:
+        reply:
+          type: string
+      required: [reply]
+
+    Referral:
+      type: object
+      properties:
+        id:
+          type: integer
+        referrerId:
+          type: integer
+        referrerName:
+          type: string
+        referredName:
+          type: string
+        referredPhone:
+          type: string
+        referralCode:
+          type: string
+        isConverted:
+          type: boolean
+        rewardGiven:
+          type: boolean
+        convertedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - referrerId
+        - referrerName
+        - referredName
+        - referredPhone
+        - referralCode
+        - isConverted
+        - rewardGiven
+        - createdAt
+
+    CreateReferralBody:
+      type: object
+      properties:
+        referrerId:
+          type: integer
+        referredName:
+          type: string
+        referredPhone:
+          type: string
+      required: [referrerId, referredName, referredPhone]
+
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: integer
+        invoiceNumber:
+          type: string
+        customerId:
+          type: integer
+          nullable: true
+        customerName:
+          type: string
+        customerPhone:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvoiceLineItem"
+        subtotal:
+          type: number
+        discountAmount:
+          type: number
+        taxAmount:
+          type: number
+        total:
+          type: number
+        status:
+          type: string
+          enum: [paid, pending, cancelled]
+        qrCode:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - invoiceNumber
+        - customerName
+        - customerPhone
+        - items
+        - subtotal
+        - discountAmount
+        - taxAmount
+        - total
+        - status
+        - qrCode
+        - createdAt
+
+    InvoiceLineItem:
+      type: object
+      properties:
+        name:
+          type: string
+        quantity:
+          type: integer
+        price:
+          type: number
+        total:
+          type: number
+      required: [name, quantity, price, total]
+
+    CreateInvoiceBody:
+      type: object
+      properties:
+        customerId:
+          type: integer
+          nullable: true
+        customerName:
+          type: string
+        customerPhone:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvoiceLineItem"
+        discountAmount:
+          type: number
+        taxRate:
+          type: number
+      required: [customerName, customerPhone, items]
+
+    RevenueForecast:
+      type: object
+      properties:
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/ForecastDay"
+        weekTotal:
+          type: number
+        confidenceLevel:
+          type: string
+        trend:
+          type: string
+          enum: [up, down, stable]
+        insight:
+          type: string
+      required: [days, weekTotal, confidenceLevel, trend, insight]
+
+    ForecastDay:
+      type: object
+      properties:
+        date:
+          type: string
+        dayName:
+          type: string
+        predictedRevenue:
+          type: number
+        lowerBound:
+          type: number
+        upperBound:
+          type: number
+        isDeadZoneRisk:
+          type: boolean
+        suggestedAction:
+          type: string
+          nullable: true
+      required:
+        - date
+        - dayName
+        - predictedRevenue
+        - lowerBound
+        - upperBound
+        - isDeadZoneRisk
+
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, title, createdAt]
+
+    CreateConversationBody:
+      type: object
+      properties:
+        title:
+          type: string
+      required: [title]
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, conversationId, role, content, createdAt]
+
+    SendMessageBody:
+      type: object
+      properties:
+        content:
+          type: string
+      required: [content]

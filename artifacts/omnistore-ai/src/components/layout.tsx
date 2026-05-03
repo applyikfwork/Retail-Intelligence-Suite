@@ -7,12 +7,30 @@ import {
   Gift, 
   Map, 
   Share2,
-  Store
+  Store,
+  Calendar,
+  UserCheck,
+  TrendingUp,
+  PiggyBank,
+  Package,
+  Star,
+  Camera
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Appointments", href: "/appointments", icon: Calendar },
+  { name: "Invoices", href: "/invoices", icon: Receipt },
+  { name: "Win-Back", href: "/win-back", icon: UserCheck },
+  { name: "AI Manager", href: "/chat", icon: MessageSquare },
+  { name: "Forecast", href: "/forecast", icon: TrendingUp },
+  { name: "Staff", href: "/staff", icon: Users },
+  { name: "Expenses", href: "/expenses", icon: PiggyBank },
+  { name: "Inventory", href: "/inventory", icon: Package },
+  { name: "Reviews", href: "/reviews", icon: Star },
+  { name: "Referrals", href: "/referrals", icon: Share2 },
+  { name: "Try-On Mirror", href: "/tryon", icon: Camera },
   { name: "Customers", href: "/customers", icon: Users },
   { name: "Campaigns", href: "/campaigns", icon: MessageSquare },
   { name: "Sales", href: "/sales", icon: Receipt },
@@ -32,7 +50,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <Store className="w-6 h-6 text-primary mr-3" />
           <span className="font-bold text-lg tracking-tight uppercase text-primary">OmniStore AI</span>
         </div>
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 scrollbar-hide">
           {navigation.map((item) => {
             const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
             return (
@@ -66,16 +84,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Mobile Nav */}
-        <div className="md:hidden border-t border-border bg-card flex justify-around p-2">
+        <div className="md:hidden border-t border-border bg-card flex justify-around p-2 overflow-x-auto scrollbar-hide">
           {navigation.map((item) => {
             const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
             return (
               <Link key={item.name} href={item.href} className={cn(
-                "flex flex-col items-center justify-center p-2 rounded-md",
+                "flex flex-col items-center justify-center p-2 rounded-md min-w-[60px]",
                 isActive ? "text-primary" : "text-muted-foreground"
               )}>
                 <item.icon className="h-5 w-5 mb-1" />
-                <span className="text-[10px] font-medium">{item.name}</span>
+                <span className="text-[10px] font-medium whitespace-nowrap">{item.name}</span>
               </Link>
             );
           })}

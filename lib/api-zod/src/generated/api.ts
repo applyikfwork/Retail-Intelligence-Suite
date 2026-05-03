@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * OmniStore AI API specification
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 import * as zod from "zod";
 
@@ -14,9 +14,6 @@ export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
 
-/**
- * @summary Get overall business summary metrics
- */
 export const GetDashboardSummaryResponse = zod.object({
   todayRevenue: zod.number(),
   todayCustomers: zod.number(),
@@ -26,23 +23,20 @@ export const GetDashboardSummaryResponse = zod.object({
   revenueGrowthPercent: zod.number(),
   topServiceToday: zod.string(),
   deadZoneAlert: zod.string().nullish(),
+  todayAppointments: zod.number(),
+  lowStockAlerts: zod.number(),
+  netProfitToday: zod.number(),
 });
 
-/**
- * @summary Get sales broken down by hour of day for dead-zone analysis
- */
 export const GetSalesByHourResponseItem = zod.object({
-  hour: zod.number().describe("Hour of day 0-23"),
-  label: zod.string().describe('Display label e.g. \"9 AM\"'),
+  hour: zod.number(),
+  label: zod.string(),
   revenue: zod.number(),
   customers: zod.number(),
   isDeadZone: zod.boolean(),
 });
 export const GetSalesByHourResponse = zod.array(GetSalesByHourResponseItem);
 
-/**
- * @summary Get sales by day of week
- */
 export const GetSalesByDayResponseItem = zod.object({
   day: zod.string(),
   revenue: zod.number(),
@@ -50,12 +44,9 @@ export const GetSalesByDayResponseItem = zod.object({
 });
 export const GetSalesByDayResponse = zod.array(GetSalesByDayResponseItem);
 
-/**
- * @summary Get recent transactions and events
- */
 export const GetRecentActivityResponseItem = zod.object({
   id: zod.number(),
-  type: zod.enum(["sale", "scan", "campaign", "post", "call"]),
+  type: zod.enum(["sale", "scan", "campaign", "post", "call", "appointment"]),
   description: zod.string(),
   customerName: zod.string().nullish(),
   amount: zod.number().nullish(),
@@ -65,9 +56,6 @@ export const GetRecentActivityResponse = zod.array(
   GetRecentActivityResponseItem,
 );
 
-/**
- * @summary List all customers
- */
 export const ListCustomersQueryParams = zod.object({
   search: zod.coerce.string().optional(),
   tier: zod.enum(["all", "vip", "regular", "new"]).optional(),
@@ -87,38 +75,12 @@ export const ListCustomersResponseItem = zod.object({
 });
 export const ListCustomersResponse = zod.array(ListCustomersResponseItem);
 
-/**
- * @summary Create a new customer
- */
 export const CreateCustomerBody = zod.object({
   name: zod.string(),
   phone: zod.string(),
   email: zod.string().nullish(),
 });
 
-/**
- * @summary Get a customer by ID
- */
-export const GetCustomerParams = zod.object({
-  id: zod.coerce.number(),
-});
-
-export const GetCustomerResponse = zod.object({
-  id: zod.number(),
-  name: zod.string(),
-  phone: zod.string(),
-  email: zod.string().nullish(),
-  tier: zod.enum(["vip", "regular", "new"]),
-  totalSpend: zod.number(),
-  visitCount: zod.number(),
-  lastVisit: zod.coerce.date().nullish(),
-  loyaltyScanCount: zod.number(),
-  createdAt: zod.coerce.date(),
-});
-
-/**
- * @summary Get top loyal customers (top 20%) for campaigns
- */
 export const GetTopLoyalCustomersResponseItem = zod.object({
   id: zod.number(),
   name: zod.string(),
@@ -136,8 +98,39 @@ export const GetTopLoyalCustomersResponse = zod.array(
 );
 
 /**
- * @summary List sales transactions
+ * @summary Customers at risk (no visit in 30+ days)
  */
+export const GetWinBackCustomersResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  phone: zod.string(),
+  tier: zod.string(),
+  totalSpend: zod.number(),
+  daysSinceVisit: zod.number(),
+  suggestedOffer: zod.string(),
+  ltv: zod.number(),
+});
+export const GetWinBackCustomersResponse = zod.array(
+  GetWinBackCustomersResponseItem,
+);
+
+export const GetCustomerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetCustomerResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  phone: zod.string(),
+  email: zod.string().nullish(),
+  tier: zod.enum(["vip", "regular", "new"]),
+  totalSpend: zod.number(),
+  visitCount: zod.number(),
+  lastVisit: zod.coerce.date().nullish(),
+  loyaltyScanCount: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+
 export const listSalesQueryLimitDefault = 50;
 
 export const ListSalesQueryParams = zod.object({
@@ -151,23 +144,19 @@ export const ListSalesResponseItem = zod.object({
   service: zod.string(),
   amount: zod.number(),
   paymentMethod: zod.enum(["cash", "upi", "card"]),
+  staffId: zod.number().nullish(),
   createdAt: zod.coerce.date(),
 });
 export const ListSalesResponse = zod.array(ListSalesResponseItem);
 
-/**
- * @summary Record a new sale
- */
 export const CreateSaleBody = zod.object({
   customerId: zod.number().nullish(),
   service: zod.string(),
   amount: zod.number(),
   paymentMethod: zod.enum(["cash", "upi", "card"]),
+  staffId: zod.number().nullish(),
 });
 
-/**
- * @summary List WhatsApp campaigns
- */
 export const ListCampaignsResponseItem = zod.object({
   id: zod.number(),
   title: zod.string(),
@@ -182,9 +171,6 @@ export const ListCampaignsResponseItem = zod.object({
 });
 export const ListCampaignsResponse = zod.array(ListCampaignsResponseItem);
 
-/**
- * @summary Create and trigger a WhatsApp campaign
- */
 export const CreateCampaignBody = zod.object({
   title: zod.string(),
   message: zod.string(),
@@ -193,9 +179,6 @@ export const CreateCampaignBody = zod.object({
   scheduledFor: zod.coerce.date().nullish(),
 });
 
-/**
- * @summary Get automatically detected dead zones (low-traffic periods)
- */
 export const GetDeadZonesResponseItem = zod.object({
   dayOfWeek: zod.string(),
   startHour: zod.number(),
@@ -207,8 +190,19 @@ export const GetDeadZonesResponseItem = zod.object({
 export const GetDeadZonesResponse = zod.array(GetDeadZonesResponseItem);
 
 /**
- * @summary Record a QR code scan for loyalty tracking
+ * @summary AI-generated Hinglish campaign message suggestions
  */
+export const GetCampaignSuggestionsBody = zod.object({
+  deadZoneLabel: zod.string(),
+  discountPercent: zod.number(),
+  targetTier: zod.string(),
+  service: zod.string(),
+});
+
+export const GetCampaignSuggestionsResponse = zod.object({
+  suggestions: zod.array(zod.string()),
+});
+
 export const RecordLoyaltyScanBody = zod.object({
   qrCode: zod.string(),
   phone: zod.string(),
@@ -222,9 +216,6 @@ export const RecordLoyaltyScanResponse = zod.object({
   nextFreeAt: zod.number(),
 });
 
-/**
- * @summary List all loyalty cards
- */
 export const ListLoyaltyCardsResponseItem = zod.object({
   id: zod.number(),
   customerId: zod.number(),
@@ -238,14 +229,11 @@ export const ListLoyaltyCardsResponseItem = zod.object({
 });
 export const ListLoyaltyCardsResponse = zod.array(ListLoyaltyCardsResponseItem);
 
-/**
- * @summary List social media posts
- */
 export const ListPostsResponseItem = zod.object({
   id: zod.number(),
   caption: zod.string(),
   imageUrl: zod.string().nullish(),
-  platforms: zod.array(zod.enum(["google_business", "instagram"])),
+  platforms: zod.array(zod.string()),
   status: zod.enum(["draft", "published", "scheduled"]),
   likes: zod.number(),
   reach: zod.number(),
@@ -253,42 +241,31 @@ export const ListPostsResponseItem = zod.object({
 });
 export const ListPostsResponse = zod.array(ListPostsResponseItem);
 
-/**
- * @summary Create and schedule a social media post
- */
 export const CreatePostBody = zod.object({
   caption: zod.string(),
   imageUrl: zod.string().nullish(),
-  platforms: zod.array(zod.enum(["google_business", "instagram"])),
+  platforms: zod.array(zod.string()),
   localKeywords: zod.array(zod.string()).optional(),
 });
 
-/**
- * @summary Get footfall heatmap zone data
- */
 export const GetFootfallHeatmapResponse = zod.object({
   zones: zod.array(
     zod.object({
       id: zod.string(),
       label: zod.string(),
-      x: zod.number().describe("X position percentage 0-100"),
-      y: zod.number().describe("Y position percentage 0-100"),
+      x: zod.number(),
+      y: zod.number(),
       width: zod.number(),
       height: zod.number(),
-      intensity: zod.number().describe("0.0 to 1.0 — heat intensity"),
+      intensity: zod.number(),
       visitors: zod.number(),
-      conversionRate: zod
-        .number()
-        .describe("Percentage of visitors who purchased"),
+      conversionRate: zod.number(),
       alert: zod.string().nullish(),
     }),
   ),
   lastUpdated: zod.coerce.date(),
 });
 
-/**
- * @summary Get AI-generated footfall insights and alerts
- */
 export const GetFootfallInsightsResponseItem = zod.object({
   id: zod.number(),
   type: zod.enum(["opportunity", "warning", "success"]),
@@ -299,3 +276,372 @@ export const GetFootfallInsightsResponseItem = zod.object({
 export const GetFootfallInsightsResponse = zod.array(
   GetFootfallInsightsResponseItem,
 );
+
+export const ListAppointmentsQueryParams = zod.object({
+  date: zod.coerce.string().optional(),
+});
+
+export const ListAppointmentsResponseItem = zod.object({
+  id: zod.number(),
+  customerId: zod.number().nullish(),
+  customerName: zod.string().nullish(),
+  customerPhone: zod.string().nullish(),
+  staffId: zod.number().nullish(),
+  staffName: zod.string().nullish(),
+  service: zod.string(),
+  notes: zod.string().nullish(),
+  status: zod.enum(["scheduled", "completed", "cancelled", "no_show"]),
+  scheduledAt: zod.coerce.date(),
+  durationMinutes: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+export const ListAppointmentsResponse = zod.array(ListAppointmentsResponseItem);
+
+export const CreateAppointmentBody = zod.object({
+  customerId: zod.number().nullish(),
+  staffId: zod.number().nullish(),
+  service: zod.string(),
+  notes: zod.string().nullish(),
+  scheduledAt: zod.coerce.date(),
+  durationMinutes: zod.number().optional(),
+});
+
+export const UpdateAppointmentParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateAppointmentBody = zod.object({
+  status: zod
+    .enum(["scheduled", "completed", "cancelled", "no_show"])
+    .optional(),
+  notes: zod.string().nullish(),
+  scheduledAt: zod.coerce.date().nullish(),
+});
+
+export const UpdateAppointmentResponse = zod.object({
+  id: zod.number(),
+  customerId: zod.number().nullish(),
+  customerName: zod.string().nullish(),
+  customerPhone: zod.string().nullish(),
+  staffId: zod.number().nullish(),
+  staffName: zod.string().nullish(),
+  service: zod.string(),
+  notes: zod.string().nullish(),
+  status: zod.enum(["scheduled", "completed", "cancelled", "no_show"]),
+  scheduledAt: zod.coerce.date(),
+  durationMinutes: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+
+export const DeleteAppointmentParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListStaffResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  phone: zod.string(),
+  role: zod.string(),
+  salary: zod.number(),
+  commissionPercent: zod.number(),
+  isActive: zod.boolean(),
+  joinedAt: zod.coerce.date(),
+  createdAt: zod.coerce.date(),
+});
+export const ListStaffResponse = zod.array(ListStaffResponseItem);
+
+export const CreateStaffBody = zod.object({
+  name: zod.string(),
+  phone: zod.string(),
+  role: zod.string(),
+  salary: zod.number(),
+  commissionPercent: zod.number().optional(),
+});
+
+export const GetStaffPerformanceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetStaffPerformanceResponse = zod.object({
+  staffId: zod.number(),
+  staffName: zod.string(),
+  totalSales: zod.number(),
+  totalRevenue: zod.number(),
+  commissionEarned: zod.number(),
+  avgSaleValue: zod.number(),
+  topService: zod.string(),
+  appointmentsCompleted: zod.number(),
+});
+
+export const ListExpensesResponseItem = zod.object({
+  id: zod.number(),
+  title: zod.string(),
+  amount: zod.number(),
+  category: zod.enum([
+    "rent",
+    "salaries",
+    "supplies",
+    "utilities",
+    "marketing",
+    "equipment",
+    "other",
+  ]),
+  notes: zod.string().nullish(),
+  date: zod.coerce.date(),
+  createdAt: zod.coerce.date(),
+});
+export const ListExpensesResponse = zod.array(ListExpensesResponseItem);
+
+export const CreateExpenseBody = zod.object({
+  title: zod.string(),
+  amount: zod.number(),
+  category: zod.enum([
+    "rent",
+    "salaries",
+    "supplies",
+    "utilities",
+    "marketing",
+    "equipment",
+    "other",
+  ]),
+  notes: zod.string().nullish(),
+  date: zod.coerce.date().nullish(),
+});
+
+export const GetProfitSummaryResponse = zod.object({
+  totalRevenue: zod.number(),
+  totalExpenses: zod.number(),
+  grossProfit: zod.number(),
+  netProfitMargin: zod.number(),
+  expenseBreakdown: zod.array(
+    zod.object({
+      category: zod.string(),
+      amount: zod.number(),
+      percentage: zod.number(),
+    }),
+  ),
+  monthlyTrend: zod.array(
+    zod.object({
+      month: zod.string(),
+      revenue: zod.number(),
+      expenses: zod.number(),
+      profit: zod.number(),
+    }),
+  ),
+});
+
+export const ListInventoryResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  category: zod.string(),
+  price: zod.number(),
+  costPrice: zod.number(),
+  stock: zod.number(),
+  lowStockThreshold: zod.number(),
+  isService: zod.boolean(),
+  isActive: zod.boolean(),
+  description: zod.string().nullish(),
+  isLowStock: zod.boolean(),
+  margin: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+export const ListInventoryResponse = zod.array(ListInventoryResponseItem);
+
+export const CreateInventoryItemBody = zod.object({
+  name: zod.string(),
+  category: zod.string(),
+  price: zod.number(),
+  costPrice: zod.number(),
+  stock: zod.number().optional(),
+  lowStockThreshold: zod.number().optional(),
+  isService: zod.boolean().optional(),
+  description: zod.string().nullish(),
+});
+
+export const UpdateInventoryItemParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateInventoryItemBody = zod.object({
+  price: zod.number().nullish(),
+  stock: zod.number().nullish(),
+  isActive: zod.boolean().nullish(),
+});
+
+export const UpdateInventoryItemResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  category: zod.string(),
+  price: zod.number(),
+  costPrice: zod.number(),
+  stock: zod.number(),
+  lowStockThreshold: zod.number(),
+  isService: zod.boolean(),
+  isActive: zod.boolean(),
+  description: zod.string().nullish(),
+  isLowStock: zod.boolean(),
+  margin: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+
+export const ListReviewsResponseItem = zod.object({
+  id: zod.number(),
+  platform: zod.string(),
+  reviewerName: zod.string(),
+  rating: zod.number(),
+  body: zod.string(),
+  reply: zod.string().nullish(),
+  isReplied: zod.boolean(),
+  publishedAt: zod.coerce.date(),
+  createdAt: zod.coerce.date(),
+});
+export const ListReviewsResponse = zod.array(ListReviewsResponseItem);
+
+export const ReplyToReviewParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ReplyToReviewBody = zod.object({
+  reply: zod.string(),
+});
+
+export const ReplyToReviewResponse = zod.object({
+  id: zod.number(),
+  platform: zod.string(),
+  reviewerName: zod.string(),
+  rating: zod.number(),
+  body: zod.string(),
+  reply: zod.string().nullish(),
+  isReplied: zod.boolean(),
+  publishedAt: zod.coerce.date(),
+  createdAt: zod.coerce.date(),
+});
+
+export const ListReferralsResponseItem = zod.object({
+  id: zod.number(),
+  referrerId: zod.number(),
+  referrerName: zod.string(),
+  referredName: zod.string(),
+  referredPhone: zod.string(),
+  referralCode: zod.string(),
+  isConverted: zod.boolean(),
+  rewardGiven: zod.boolean(),
+  convertedAt: zod.coerce.date().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const ListReferralsResponse = zod.array(ListReferralsResponseItem);
+
+export const CreateReferralBody = zod.object({
+  referrerId: zod.number(),
+  referredName: zod.string(),
+  referredPhone: zod.string(),
+});
+
+export const ConvertReferralParams = zod.object({
+  code: zod.coerce.string(),
+});
+
+export const ConvertReferralResponse = zod.object({
+  id: zod.number(),
+  referrerId: zod.number(),
+  referrerName: zod.string(),
+  referredName: zod.string(),
+  referredPhone: zod.string(),
+  referralCode: zod.string(),
+  isConverted: zod.boolean(),
+  rewardGiven: zod.boolean(),
+  convertedAt: zod.coerce.date().nullish(),
+  createdAt: zod.coerce.date(),
+});
+
+export const ListInvoicesResponseItem = zod.object({
+  id: zod.number(),
+  invoiceNumber: zod.string(),
+  customerId: zod.number().nullish(),
+  customerName: zod.string(),
+  customerPhone: zod.string(),
+  items: zod.array(
+    zod.object({
+      name: zod.string(),
+      quantity: zod.number(),
+      price: zod.number(),
+      total: zod.number(),
+    }),
+  ),
+  subtotal: zod.number(),
+  discountAmount: zod.number(),
+  taxAmount: zod.number(),
+  total: zod.number(),
+  status: zod.enum(["paid", "pending", "cancelled"]),
+  qrCode: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const ListInvoicesResponse = zod.array(ListInvoicesResponseItem);
+
+export const CreateInvoiceBody = zod.object({
+  customerId: zod.number().nullish(),
+  customerName: zod.string(),
+  customerPhone: zod.string(),
+  items: zod.array(
+    zod.object({
+      name: zod.string(),
+      quantity: zod.number(),
+      price: zod.number(),
+      total: zod.number(),
+    }),
+  ),
+  discountAmount: zod.number().optional(),
+  taxRate: zod.number().optional(),
+});
+
+export const GetRevenueForecastResponse = zod.object({
+  days: zod.array(
+    zod.object({
+      date: zod.string(),
+      dayName: zod.string(),
+      predictedRevenue: zod.number(),
+      lowerBound: zod.number(),
+      upperBound: zod.number(),
+      isDeadZoneRisk: zod.boolean(),
+      suggestedAction: zod.string().nullish(),
+    }),
+  ),
+  weekTotal: zod.number(),
+  confidenceLevel: zod.string(),
+  trend: zod.enum(["up", "down", "stable"]),
+  insight: zod.string(),
+});
+
+export const ListConversationsResponseItem = zod.object({
+  id: zod.number(),
+  title: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const ListConversationsResponse = zod.array(
+  ListConversationsResponseItem,
+);
+
+export const CreateConversationBody = zod.object({
+  title: zod.string(),
+});
+
+export const ListMessagesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListMessagesResponseItem = zod.object({
+  id: zod.number(),
+  conversationId: zod.number(),
+  role: zod.enum(["user", "assistant"]),
+  content: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const ListMessagesResponse = zod.array(ListMessagesResponseItem);
+
+export const SendMessageParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const SendMessageBody = zod.object({
+  content: zod.string(),
+});
