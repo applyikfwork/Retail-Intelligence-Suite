@@ -75,8 +75,7 @@ router.get("/staff/:id/performance", async (req, res) => {
         count: sql<number>`count(*)::int`,
         total: sql<number>`coalesce(sum(amount::numeric), 0)`,
       })
-      .from(salesTable)
-      .where(eq(salesTable.staffId, id));
+      .from(salesTable);
 
     const [apptResult] = await db
       .select({ count: sql<number>`count(*)::int` })
@@ -89,7 +88,6 @@ router.get("/staff/:id/performance", async (req, res) => {
         count: sql<number>`count(*)::int`,
       })
       .from(salesTable)
-      .where(eq(salesTable.staffId, id))
       .groupBy(salesTable.service)
       .orderBy(sql`count(*) desc`)
       .limit(1);

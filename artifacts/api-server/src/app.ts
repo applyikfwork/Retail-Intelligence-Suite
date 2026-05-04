@@ -7,19 +7,20 @@ import { logger } from "./lib/logger";
 const app: Express = express();
 
 app.use(
-  pinoHttp({
+  // pino-http uses `export =` style — cast needed when esModuleInterop is off
+  (pinoHttp as unknown as (opts: object) => express.RequestHandler)({
     logger,
     serializers: {
-      req(req) {
+      req(req: Record<string, unknown>) {
         return {
-          id: req.id,
-          method: req.method,
-          url: req.url?.split("?")[0],
+          id: req["id"],
+          method: req["method"],
+          url: typeof req["url"] === "string" ? req["url"].split("?")[0] : req["url"],
         };
       },
-      res(res) {
+      res(res: Record<string, unknown>) {
         return {
-          statusCode: res.statusCode,
+          statusCode: res["statusCode"],
         };
       },
     },
