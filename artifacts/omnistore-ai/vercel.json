@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd ../.. && pnpm install --frozen-lockfile && pnpm run typecheck:libs && pnpm --filter @workspace/omnistore-ai run build",
+  "buildCommand": "cd ../.. && pnpm install --no-frozen-lockfile && pnpm run typecheck:libs && pnpm --filter @workspace/omnistore-ai run build",
   "outputDirectory": "dist/public",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
